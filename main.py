@@ -7,7 +7,7 @@ import pyrogram, os, asyncio
 app_id = int(os.environ.get("app_id", "20919625"))
 api_hash = os.environ.get("api_hash", "40168846bf06f4ff443f0f7a4182bf8d")
 bot_token = os.environ.get("bot_token", "6569842591:AAFWT0-OAnqbaoHsczM7TQQ-NKFDho9nPoA")
-custom_caption = os.environ.get("custom_caption", "") # Here You Can Give Anything, if You Want Real File Name Then Use {file_name}
+custom_caption = os.environ.get("custom_caption", "{file_name}") # Here You Can Give Anything, if You Want Real File Name Then Use {file_name}
 
 AutoCaptionBotV1 = pyrogram.Client(name="AutoCaptionBotV1", api_id=app_id, api_hash=api_hash, bot_token=bot_token)
 
