@@ -7,15 +7,7 @@ import pyrogram, os, asyncio
 app_id = int(os.environ.get("app_id", "20919625"))
 api_hash = os.environ.get("api_hash", "40168846bf06f4ff443f0f7a4182bf8d")
 bot_token = os.environ.get("bot_token", "6569842591:AAFWT0-OAnqbaoHsczM7TQQ-NKFDho9nPoA")
-custom_caption = os.environ.get("custom_caption", "<b>Filename  :<code>{filename}</code>
-<blockquote>💾 Sɪᴢᴇ           :  {filesize}
-⏰ Dᴜʀᴀᴛɪᴏɴ :  {duration}
-🔮 Type          :  {mime_type} 
-🔊Aᴜᴅɪᴏ         : {title} </blockquote>
-<blockquote>⏤‌‌ 𝗝⌡𝗼𝗶𝗻 ➥  「@soumensupport 」
-⏤‌‌ 𝗝⌡𝗼𝗶𝗻 ➥  「 @movieguru9980 」</blockquote>
-▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱
-<blockquote>𝙉ote :- 𝙋𝙡𝙚𝙖𝙨𝙚 𝙪𝙨𝙚 𝙈𝙓 𝙋𝙡𝙖𝙮𝙚𝙧 𝙤𝙧 𝙑𝙇𝘾 𝙋𝙡𝙖𝙮𝙚𝙧 𝙩𝙤 𝙋𝙡𝙖𝙮 𝙏𝙝𝙞𝙨 𝙑𝙞𝙙𝙚𝙤.𝘽𝙪𝙩 𝙄𝙛 𝙔𝙤𝙪'𝙧𝙚 𝙁𝙖𝙘𝙞𝙣𝙜 𝘼𝙣𝙮 𝘼𝙪𝙙𝙞𝙤 𝙍𝙚𝙡𝙖𝙩𝙚𝙙 𝙄𝙨𝙨𝙪𝙚𝙨 𝙞𝙣 𝙈𝙓 𝙋𝙡𝙖𝙮𝙚𝙧,𝙏𝙝𝙚𝙣 𝘿𝙤 𝙆𝙞𝙣𝙙𝙡𝙮 𝙪𝙨𝙚 𝙑𝙇𝘾 𝙋𝙡𝙖𝙮𝙚𝙧.</blockquote></b>") # Here You Can Give Anything, if You Want Real File Name Then Use {file_name}
+custom_caption = os.environ.get("custom_caption", "") # Here You Can Give Anything, if You Want Real File Name Then Use {file_name}
 
 AutoCaptionBotV1 = pyrogram.Client(name="AutoCaptionBotV1", api_id=app_id, api_hash=api_hash, bot_token=bot_token)
 
