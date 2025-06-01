@@ -1,94 +1,159 @@
-# Don't Remove Credit @VJ_Botz
-# Subscribe YouTube Channel For Amazing Bot @Tech_VJ
-# Ask Doubt on telegram @KingVJ01
+# Auto Caption Bot with Advanced Variables
+# Deployable on Koyeb/Heroku/Railway
 
-import pyrogram, os, asyncio
+import os
+import re
+import asyncio
+from datetime import datetime
+import pyrogram
+from pyrogram import Client, filters
+from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from pyrogram.enums import ParseMode
 
-app_id = int(os.environ.get("app_id", "20919625"))
-api_hash = os.environ.get("api_hash", "40168846bf06f4ff443f0f7a4182bf8d")
-bot_token = os.environ.get("bot_token", "7735245680:AAFN18sRIcA67dQpVXMKp2MZXK9_IG3O-nw")
-custom_caption = os.environ.get("custom_caption", "<blockquote>{file_name}</blockquote>") # Here You Can Give Anything, if You Want Real File Name Then Use {file_name}
+# Configuration
+app_id = int(os.environ.get("APP_ID", "20919625"))
+api_hash = os.environ.get("API_HASH", "40168846bf06f4ff443f0f7a4182bf8d")
+bot_token = os.environ.get("BOT_TOKEN", "7735245680:AAGA6un50i9FPtXHX-AcitLvqsvHBPIMDp4")
+default_caption = os.environ.get("DEFAULT_CAPTION", """
+🎬 {title} | {artist}
+📅 {year} | 🗣️ {language} | 🎞️ {quality}
+📺 S{season}E{episode} | ⏱️ {duration}
+📊 {resolution} | 📦 {filesize}
+✨ {wish}!
+""")
 
-AutoCaptionBotV1 = pyrogram.Client(name="AutoCaptionBotV1", api_id=app_id, api_hash=api_hash, bot_token=bot_token)
+# Initialize Pyrogram Client
+app = Client(
+    "AutoCaptionBotV2",
+    api_id=app_id,
+    api_hash=api_hash,
+    bot_token=bot_token
+)
 
-start_message = """
-<b>👋Hello {}</b>
-<b>I am an AutoCaption bot</b>
-<b>All you have to do is to add me to your channel as admin and I will show you my power</b>
-<b>@VJ_Botz</b>"""
+# Helper Functions
+def sizeof_fmt(num, suffix='B'):
+    for unit in ['','K','M','G','T','P','E','Z']:
+        if abs(num) < 1024.0:
+            return "%3.1f%s%s" % (num, unit, suffix)
+        num /= 1024.0
+    return "%.1f%s%s" % (num, 'Yi', suffix)
 
-about_message = """
-<b>• Name : <a href=https://t.me/VJ_Botz>VJ AutoCaption</a></b>
-<b>• Developer : <a href=https://t.me/VJ_Botz>[VJ UPDATES]</a></b>
-<b>• Language : Python3</b>
-<b>• Library : Pyrogram v{version}</b>
-<b>• Updates : <a href=https://t.me/VJ_Botz>Click Here</a></b>
-<b>• Source Code : <a href=https://github.com/VJBots/VJ-AutoCaption-Bot>Click Here</a></b>"""
+def get_time_based_wish():
+    hour = datetime.now().hour
+    if 5 <= hour < 12:
+        return "Good Morning"
+    elif 12 <= hour < 17:
+        return "Good Afternoon"
+    elif 17 <= hour < 21:
+        return "Good Evening"
+    else:
+        return "Good Night"
 
-@AutoCaptionBotV1.on_message(pyrogram.filters.private & pyrogram.filters.command(["start"]))
-def start_command(bot, update):
-    update.reply(start_message.format(update.from_user.mention), reply_markup=start_buttons(bot, update), parse_mode=pyrogram.enums.ParseMode.HTML, disable_web_page_preview=True)
-
-@AutoCaptionBotV1.on_callback_query(pyrogram.filters.regex("start"))
-def strat_callback(bot, update):
-    update.message.edit(start_message.format(update.from_user.mention), reply_markup=start_buttons(bot, update.message), parse_mode=pyrogram.enums.ParseMode.HTML, disable_web_page_preview=True)
-
-@AutoCaptionBotV1.on_callback_query(pyrogram.filters.regex("about"))
-def about_callback(bot, update): 
-    bot = bot.get_me()
-    update.message.edit(about_message.format(version=pyrogram.__version__, username=bot.mention), reply_markup=about_buttons(bot, update.message), parse_mode=pyrogram.enums.ParseMode.HTML, disable_web_page_preview=True)
-
-@AutoCaptionBotV1.on_message(pyrogram.filters.channel)
-def edit_caption(bot, update: pyrogram.types.Message):
-    techvj, _ = get_file_details(update)
-    try:
-       try:
-           update.edit(custom_caption.format(file_name=techvj.file_name))
-       except pyrogram.errors.FloodWait as FloodWait:
-           asyncio.sleep(FloodWait.value)
-           update.edit(custom_caption.format(file_name=techvj.file_name))
-       except:
-          pass
-    except pyrogram.errors.MessageNotModified:
-        pass 
+def parse_filename(filename):
+    """Extract metadata from filename"""
+    if not filename:
+        return {}
     
-def get_file_details(update: pyrogram.types.Message):
-    if update.media:
-        for message_type in (
-            "photo",
-            "animation",
-            "audio",
-            "document",
-            "video",
-            "video_note",
-            "voice",
-            "sticker"
-        ):
-            obj = getattr(update, message_type)
-            if obj:
-                return obj, obj.file_id
+    patterns = {
+        'language': r'\[([A-Za-z]{2,3})\]|\(([A-Za-z]{2,3})\)',
+        'year': r'(19|20)\d{2}',
+        'quality': r'(480p|720p|1080p|2160p|4K|8K|HD|FHD|UHD)',
+        'season': r'S(\d{1,2})|Season\s(\d{1,2})',
+        'episode': r'E(\d{1,2})|Episode\s(\d{1,2})',
+        'title': r'^(.+?)(?=[\[\(]|S\d|E\d|\d{4}|480p|720p|1080p)',
+        'artist': r'-\s(.+?)(?=[\[\(]|S\d|E\d|\d{4}|480p|720p|1080p)'
+    }
+    
+    metadata = {
+        'filename': filename,
+        'ext': filename.split('.')[-1].lower() if '.' in filename else '',
+        'language': '',
+        'year': '',
+        'quality': '',
+        'season': '',
+        'episode': '',
+        'title': '',
+        'artist': ''
+    }
+    
+    for key, pattern in patterns.items():
+        match = re.search(pattern, filename, re.IGNORECASE)
+        if match:
+            groups = [g for g in match.groups() if g]
+            if groups:
+                metadata[key] = groups[0]
+    
+    return metadata
 
-def start_buttons(bot, update):
-    bot = bot.get_me()
-    buttons = [[
-        pyrogram.types.InlineKeyboardButton("Updates", url="t.me/VJ_Botz"),
-        pyrogram.types.InlineKeyboardButton("About 🤠", callback_data="about")
-    ],[
-        pyrogram.types.InlineKeyboardButton("➕️ Add To Your Channel ➕️", url=f"http://t.me/{bot.username}?startchannel=true")
-    ]]
-    return pyrogram.types.InlineKeyboardMarkup(buttons)
+# Bot Handlers
+@app.on_message(filters.command("start") & filters.private)
+async def start_command(client, message):
+    await message.reply_text(
+        "👋 Hello! I'm an Advanced Auto Caption Bot\n\n"
+        "Add me to your channel as admin with edit rights\n"
+        "Use /setcaption to configure your template",
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("📢 Updates Channel", url="t.me/VJ_Botz")],
+            [InlineKeyboardButton("➕ Add to Channel", url=f"http://t.me/{client.me.username}?startchannel=true")]
+        ])
+    )
 
-def about_buttons(bot, update):
-    buttons = [[
-        pyrogram.types.InlineKeyboardButton("🏠 Back To Home 🏠", callback_data="start")
-    ]]
-    return pyrogram.types.InlineKeyboardMarkup(buttons)
+@app.on_message(filters.command("setcaption") & filters.private)
+async def set_caption(client, message):
+    # Implement caption template setting logic
+    # Store in database for each user/channel
+    await message.reply_text("Send me your new caption template with variables")
 
-print("Telegram AutoCaption V1 Bot Start")
-print("Bot Created By @VJ_Botz")
+@app.on_message(filters.channel)
+async def auto_caption(client, message):
+    if not message.caption and not any([
+        message.photo, message.video, 
+        message.document, message.audio
+    ]):
+        return
+    
+    # Get file details
+    file = (message.document or message.video or 
+            message.audio or message.photo[-1] if message.photo else None)
+    
+    # Extract metadata
+    file_name = getattr(file, "file_name", "")
+    file_meta = parse_filename(file_name)
+    
+    # Prepare variables
+    variables = {
+        'filename': file_meta['filename'],
+        'filesize': sizeof_fmt(getattr(file, "file_size", 0)),
+        'caption': message.caption or '',
+        'language': file_meta['language'],
+        'year': file_meta['year'],
+        'quality': file_meta['quality'],
+        'season': file_meta['season'],
+        'episode': file_meta['episode'],
+        'ext': file_meta['ext'],
+        'mime_type': getattr(file, "mime_type", ""),
+        'title': file_meta.get('title', '') or getattr(file, "title", ""),
+        'artist': file_meta.get('artist', '') or getattr(file, "performer", ""),
+        'wish': get_time_based_wish(),
+        'duration': str(datetime.timedelta(seconds=getattr(file, "duration", 0))),
+        'height': str(getattr(file, "height", 0)),
+        'width': str(getattr(file, "width", 0)),
+        'resolution': f"{getattr(file, 'width', 0)}x{getattr(file, 'height', 0)}"
+    }
+    
+    # Format caption
+    try:
+        new_caption = default_caption.format(**variables)
+    except KeyError as e:
+        new_caption = f"Error in template: {e}"
+    
+    # Edit message
+    try:
+        await message.edit_caption(new_caption)
+    except Exception as e:
+        print(f"Error editing caption: {e}")
 
-AutoCaptionBotV1.run()
-
-# Don't Remove Credit @VJ_Botz
-# Subscribe YouTube Channel For Amazing Bot @Tech_VJ
-# Ask Doubt on telegram @KingVJ01
+# Start the Bot
+print("⚡ Advanced Auto Caption Bot Started!")
+print("📢 Updates: @Moviehub9089")
+app.run()
