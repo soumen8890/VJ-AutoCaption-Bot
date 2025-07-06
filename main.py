@@ -13,7 +13,7 @@ from pyrogram.enums import ParseMode
 # Configuration
 app_id = int(os.environ.get("APP_ID", "20919625"))
 api_hash = os.environ.get("API_HASH", "40168846bf06f4ff443f0f7a4182bf8d")
-bot_token = os.environ.get("BOT_TOKEN", "7735245680:AAGA6un50i9FPtXHX-AcitLvqsvHBPIMDp4")
+bot_token = os.environ.get("BOT_TOKEN", "7212259744:AAFEHoo3NBmE02csGSSRyooQEOl7IazPrSI")
 default_caption = os.environ.get("DEFAULT_CAPTION", """
 🎬 {title} | {artist}
 📅 {year} | 🗣️ {language} | 🎞️ {quality}
